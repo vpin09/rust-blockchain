@@ -1,7 +1,13 @@
+use std::vec;
 
-use crate::transaction::{Transaction,TXInput,TXOutput};
+use crate::transaction::{self, TXInput, TXOutput, Transaction};
+use crate::proof_of_work::{ProofOfWork};
+use serde::{Deserialize, Serialize};
+use sled::IVec;
+
+#[derive(Clone,Deserialize,Serialize)]
 pub struct Block {
-    Timestamp: i64,         //it will strore the integer value when block was created
+    timestamp: i64,         //it will strore the integer value when block was created
     pre_block_hash: String, //hash value of the previous hash
     hash: String,           //hash value of the cuurent blocka
     transaction: Vec<Transaction>, //vector that hold  various transaction
@@ -24,4 +30,49 @@ impl Block {
         block.hash = hash;
         return block;
     }
+    pub fn deserialize(bytes:&u8)->Block{
+        bincode::deserialize(bytes).unwrap()
+    }
+
+    pub fn serialize(&self)-> Vec<u8>{
+        bincode::serialize(self).unwrap().to_vec()
+
+    }
+
+    pub fn get_transaction(&self) -> &[Transaction] {
+        self.transaction.as_mut_slice()
+        
+    }
+
+    pub  fn get_pre_block_hash(&self)->String{
+        self.pre_block_hash.clone()
+    }
+    pub fn get_hash_bytes(&self)->Vec<u8>{
+        self.hash.as_bytes().to_vec()
+    }
+    pub fn get_timestamp(&self)->i64{
+        self.timestamp
+    }
+    pub fn hash_transaction(&self)-> Vec<u8>{
+        let mut txhash=vec![];
+        for transaction in  &self.transaction{
+            txhash.extend(transaction.get_id());
+        }
+        crate::sha256_digest(txhash.as_slice())
+    }
+
+    pub  fn generate_genesis_block(transaction:&Transaction)->Block{
+        let transaction=vec![transaction.clone()];
+        return Block::new_block(String::from("None"), &transaction, 0);
+
+    }
+
+
+}
+impl From<Block> for  IVec {
+    fn from(b: Block) -> Self {
+        let bytes=bincode::serialize(&b).unwrap();
+        Self::from(bytes)
+    }
+    
 }
