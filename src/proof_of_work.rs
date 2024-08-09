@@ -1,5 +1,6 @@
 use core::hash;
 use std::borrow::Borrow;
+use data_encoding::HEXLOWER;
 
 use crate::block::{Block};
 use num_bigint::{BigInt};
@@ -20,7 +21,7 @@ impl ProofOfWork {
                 println!("{}",HEXLOWER.encode(hash.as_slice()));
                 break;
             }else {
-                nonce_+=1;
+                nonce +=1;
             }
         }
         println!();
