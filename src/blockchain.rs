@@ -7,7 +7,7 @@ const BLOCKS_TREE:&str="blocks";
 const TIP_BLOCK_HASH_KEY:&str="tip_block_hash";
 
 use crate::block::{self, Block};
-use crate::transaction::{Transaction};
+use crate::transaction::{self, Transaction};
 pub struct Blockchain{
     tip_hash:Arc<RwLock<String>>,
     db: Db,
@@ -43,4 +43,49 @@ impl Blockchain{
             db
         }
     }
+    pub fn get_db(&self)->&Db{
+        &self.db
+    }
+    pub fn get_tip_hash(&self)->String {
+        self.tip_hash.read().unwrap().clone()
+    }
+    pub fn set_tip_hash(&self,new_tip_hash:&str){
+        let mut tip_hash=self.tip_hash.write().unwrap();
+        *tip_hash=String::from(new_tip_hash)
+    }
+    pub fn mine_block(&mut self,transactions:Vec<Transaction>)->Block {
+        for transaction in transactions{
+            if transaction.verify(self) == false {
+                panic!("ERROR: Invalid Transaction")
+            }
+
+            
+        }
+        let best_height=self.get_best_height();
+        let block=Block::new_block(self.get_tip_hash(), &transactions, best_height+1);
+        let blocks_hash=block.get_hash();
+        let blocks_tree=self.db.open_tree(BLOCKS_TREE).unwrap();
+        Self::update_blocks_tree(&blocks_tree,&block);
+        self.set_tip_hash(blocks_hash);
+        block
+        
+    }
+
+}
+pub struct BlockchainIterator{
+    db:Db,
+    current_hash:String,
+}
+impl BlockchainIterator {
+    fn new(tip_hash:String,db:Db)-> BlockchainIterator {
+
+    }
+    pub fn iterator(&self)->BlockchainIterator {
+        BlockchainIterator::new(self.get_tip_hash(),self.db.clone())
+        
+    }
+    pub fn next(&mut self)->Option<Block>{
+
+    }
+    
 }
